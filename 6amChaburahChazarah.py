@@ -13,7 +13,6 @@ import copy
 
 def main():
   """ Main entry point of the app """
-  print("hello world")
 
   class DailyLimud:
     def __init__(self, date, daf, amud):
@@ -59,6 +58,9 @@ def main():
     def incrementPortion(self):
       self.portion = "Top" if (self.portion == "Bottom") else "Bottom"
 
+    def setDate(self, date):
+      self.date = date
+
     def reset(self):
       self.daf = 2
       self.amud = "a"
@@ -78,9 +80,7 @@ def main():
   startDaf = 6
   startAmud = "a"
 
-  days = 30
-
-  dailyLimudList = []
+  days = 60
   
   # tempDate = startDate
   # while tempDate <= endDate:
@@ -92,7 +92,7 @@ def main():
 
   # initial limud 
   limud = DailyLimud(datetime.datetime(2023,11,26),startDaf,startAmud)
-  dailyLimudList.append(limud)
+  dailyLimudList = []
 
   # iterate and add limud for n days
   for date in (startDate + datetime.timedelta(n) for n in range(days)):
@@ -114,30 +114,42 @@ def main():
   chazarahStartPortion = "Top"
 
   chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartPortion)
+  # TODO: fix this so that the first element is correct; however simple fix breaks stuff
   chazarahLimudList = [chazarahLimud]
+  resetFlag = False
 
+  chazarahIndex = 0
   # iterate and add chazarah limud with logic following the weekly/daily limud
-  for pos,limud in enumerate(dailyLimudList):
+  for limud in dailyLimudList:
+    chazarahLimud.setDate(limud.date)
     if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
-      print("~~~~ CAUGHT UP - NEED TO RESET")
+      print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
       # TODO: reset the chazarahLimud obj and also the pos to 0 --> will need to use an index
+      chazarahLimud.reset()
+      resetFlag = True
     
     print("LIMUD: " + limud.getDailyLimud() + " \t\t" + "CHAZARAH: " + chazarahLimud.getDailyLimud())
     
-    chazarahLimud.incrementPortion()
-    thisAmud = chazarahLimudList[pos].amud 
-    lastAmud = chazarahLimudList[pos-1].amud 
+    if (resetFlag == False):
+      chazarahLimud.incrementPortion()
+      thisAmud = chazarahLimudList[chazarahIndex].amud 
+      lastAmud = chazarahLimudList[chazarahIndex-1].amud 
 
-    # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
+      # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
 
-    if ((pos > 0) and (thisAmud == lastAmud)):
-      chazarahLimud.incrementAmud()
+      if ((chazarahIndex > 0) and (thisAmud == lastAmud)):
+        chazarahLimud.incrementAmud()
 
-    if ((pos+1) % 4 == 0):
-      chazarahLimud.incrementDaf()
+      if ((chazarahIndex+1) % 4 == 0):
+        chazarahLimud.incrementDaf()
     
-    newChazarahLimud = copy.deepcopy(chazarahLimud)
+    newChazarahLimud = copy.copy(chazarahLimud)
     chazarahLimudList.append(newChazarahLimud)
+    resetFlag = False
+    chazarahIndex += 1
+  
+  # for limud in dailyLimudList: print(limud.getDailyLimud())
+  # for limud in chazarahLimudList: print(limud.getDailyLimud())
   
 
 
