@@ -78,7 +78,6 @@ def main():
 
   chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
   chazarahLimudList = []
-  resetFlag = False
 
   chazarahIndex = 0
   
@@ -90,31 +89,30 @@ def main():
 
     # iterate and add chazarah limud with logic following the weekly/daily limud
     for pos,limud in enumerate(dailyLimudList):
-      # reset chazarah if chazarah caught up with limud
-      if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
-        print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
-        chazarahLimud.reset()
-        resetFlag = True
-        chazarahIndex = 0
       # On first iteration, chazarah will be 2aTop
       if (pos == 0):
         chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
         chazarahLimud.setDate(date)
       else:
         # if we are not resetting, increment section and amud/daf if applicable
-        if (resetFlag == False and chazarahIndex > 0):
-          chazarahLimud.incrementSection()
-          
-          thisAmud = chazarahLimudList[chazarahIndex-1].amud 
-          lastAmud = chazarahLimudList[chazarahIndex-2].amud 
+        chazarahLimud.incrementSection()
+        
+        thisAmud = chazarahLimudList[chazarahIndex-1].amud 
+        lastAmud = chazarahLimudList[chazarahIndex-2].amud 
 
-          # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
+        # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
 
-          if (thisAmud == lastAmud and chazarahIndex > 1):
-            chazarahLimud.incrementAmud()
+        if (thisAmud == lastAmud and chazarahIndex > 1):
+          chazarahLimud.incrementAmud()
 
-          if (chazarahIndex % 4 == 0):
-            chazarahLimud.incrementDaf()
+        if (chazarahIndex % 4 == 0):
+          chazarahLimud.incrementDaf()
+
+      # reset chazarah if chazarah caught up with limud
+      if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
+        print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
+        chazarahLimud.reset()
+        chazarahIndex = 0
 
       # chazarah date will match limud date
       chazarahLimud.setDate(limud.date)
@@ -126,7 +124,6 @@ def main():
       
       print(getDailyLimudAndChazarah(limud,chazarahLimud))
 
-      resetFlag = False
       chazarahIndex += 1
   
 
