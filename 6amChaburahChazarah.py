@@ -8,6 +8,7 @@ __author__ = "Yehuda"
 __version__ = "0.1.0"
 __license__ = "MIT"
 
+import sys
 import datetime
 import copy
 import Limud
@@ -46,7 +47,9 @@ def main():
   startAmud = "a"
 
   # Number of Days to Calculate Chazarah Schedule
-  days = 60
+  # If argument is given in the command line, use that value
+  defaultDays = 60
+  days = int(sys.argv[1]) if len(sys.argv) > 1 else defaultDays
 
   # initial limud 
   limud = DailyLimud(datetime.datetime(2023,11,26),startDaf,startAmud)
