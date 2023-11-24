@@ -13,6 +13,7 @@ import datetime
 import copy
 import Limud
 import csv
+from pyluach import dates, hebrewcal
 
 def main():
   """ Main entry point of the app """
@@ -85,7 +86,7 @@ def main():
     writer = csv.writer(file, dialect='excel')
 
     # Header Row for the CSV
-    writer.writerow(["Date","Hebrew Day","Limud","Chazarah"])
+    writer.writerow(["Date","Hebrew Date","Limud","Chazarah"])
 
     # iterate and add chazarah limud with logic following the weekly/daily limud
     for pos,limud in enumerate(dailyLimudList):
@@ -121,7 +122,7 @@ def main():
       chazarahLimudList.append(copy.copy(chazarahLimud))
       
       # Add to CSV
-      writer.writerow([limud.getDateString(), limud.getHebrewDay(), limud.getDafAmud() if not limud.date.weekday() else "", chazarahLimud.getDafAmudSection()])
+      writer.writerow([limud.getDateString(), convertGregToHebrew(limud.date), limud.getDafAmud() if not limud.date.weekday() else "", chazarahLimud.getDafAmudSection()])
       
       print(getDailyLimudAndChazarah(limud,chazarahLimud))
 
@@ -136,6 +137,11 @@ def getDailyLimudAndChazarah(limud, chazarah):
 # TODO:
 def writeLineToCSV(writer, limud, chazarah):
   return null
+
+def convertGregToHebrew(date):
+  pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)
+  pyLuachHebDate = pyLuachGregDate.to_heb()
+  return pyLuachHebDate.hebrew_date_string(True)
 
 if __name__ == "__main__":
   """ This is executed when run from the command line """
