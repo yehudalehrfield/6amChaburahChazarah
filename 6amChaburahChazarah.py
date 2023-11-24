@@ -31,7 +31,7 @@ def main():
       self.section = section
 
     def getDafAmudSection(self):
-      return self.getDafAmud() + self.section
+      return self.getDafAmud() + " " +  self.section
 
     def incrementSection(self):
       self.section = "Top" if (self.section == "Bottom") else "Bottom"
@@ -85,7 +85,7 @@ def main():
     writer = csv.writer(file, dialect='excel')
 
     # Header Row for the CSV
-    writer.writerow(["Row","Date","English Day","Hebrew Day","Limud","Chazarah"])
+    writer.writerow(["Date","Hebrew Day","Limud","Chazarah"])
 
     # iterate and add chazarah limud with logic following the weekly/daily limud
     for pos,limud in enumerate(dailyLimudList):
@@ -121,7 +121,7 @@ def main():
       chazarahLimudList.append(copy.copy(chazarahLimud))
       
       # Add to CSV
-      writer.writerow([pos, limud.getDateString(), limud.getDay(), limud.getHebrewDay(), limud.getDafAmud(), chazarahLimud.getDafAmudSection()])
+      writer.writerow([limud.getDateString(), limud.getHebrewDay(), limud.getDafAmud() if not limud.date.weekday() else "", chazarahLimud.getDafAmudSection()])
       
       print(getDailyLimudAndChazarah(limud,chazarahLimud))
 
@@ -130,7 +130,8 @@ def main():
   
 
 def getDailyLimudAndChazarah(limud, chazarah):
-  return limud.getDateAndDayString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
+  # return limud.getDateAndDayString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
+  return limud.getDateString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
 
 # TODO:
 def writeLineToCSV(writer, limud, chazarah):

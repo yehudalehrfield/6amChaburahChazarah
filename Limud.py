@@ -1,13 +1,15 @@
+import calendar
+
 class Limud:
   def __init__(self, date, daf, amud):
       self.date = date
       self.daf = daf
       self.amud = amud
     
-  weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   weekdaysHebrewBackwards = ['׳א םוי', '׳ב םוי', '׳ג םוי', '׳ד םוי', '׳ה םוי', '׳ו םוי', 'שדק תבש']
-  weekdaysHebrew = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת קדש']
-  
+  weekdaysHebrew = ['יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת קדש', 'יום א׳']
+  months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
 
   def incrementDaf(self):
@@ -17,7 +19,13 @@ class Limud:
     self.amud = "a" if (self.amud == "b") else "b"
 
   def getDateString(self):
-    return self.date.strftime("%m/%d/%Y")
+    weekday = self.weekdays[self.date.weekday()]
+    month = self.months[self.date.month-1]
+    day = str(self.date.day)
+    year = str(self.date.year)
+    return "{0}, {1} {2}, {3}".format(weekday, month, day, year)
+
+    # return self.weekdays[self.date.weekday()] + ", " + 
 
   def setDate(self, date):
     self.date = date
