@@ -12,6 +12,7 @@ import sys
 import datetime
 import copy
 import Limud
+import csv
 
 def main():
   """ Main entry point of the app """
@@ -79,47 +80,61 @@ def main():
   resetFlag = False
 
   chazarahIndex = 0
-  # iterate and add chazarah limud with logic following the weekly/daily limud
-  for pos,limud in enumerate(dailyLimudList):
-    # reset chazarah if chazarah caught up with limud
-    if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
-      print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
-      chazarahLimud.reset()
-      resetFlag = True
-      chazarahIndex = 0
-    # On first iteration, chazarah will be 2aTop
-    if (pos == 0):
-      chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
-      chazarahLimud.setDate(date)
-    else:
-      # if we are not resetting, increment section and amud/daf if applicable
-      if (resetFlag == False and chazarahIndex > 0):
-        chazarahLimud.incrementSection()
-        
-        thisAmud = chazarahLimudList[chazarahIndex-1].amud 
-        lastAmud = chazarahLimudList[chazarahIndex-2].amud 
+  
+  with open('./exports/6amChazarah_startDate-' + startDate.strftime("%m%d%Y") + '_days-' + str(days) + '.csv','w') as file:
+    writer = csv.writer(file, dialect='excel')
 
-        # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
+    # Header Row for the CSV
+    writer.writerow(["Row","Date","English Day","Hebrew Day","Limud","Chazarah"])
 
-        if (thisAmud == lastAmud and chazarahIndex > 1):
-          chazarahLimud.incrementAmud()
+    # iterate and add chazarah limud with logic following the weekly/daily limud
+    for pos,limud in enumerate(dailyLimudList):
+      # reset chazarah if chazarah caught up with limud
+      if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
+        print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
+        chazarahLimud.reset()
+        resetFlag = True
+        chazarahIndex = 0
+      # On first iteration, chazarah will be 2aTop
+      if (pos == 0):
+        chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
+        chazarahLimud.setDate(date)
+      else:
+        # if we are not resetting, increment section and amud/daf if applicable
+        if (resetFlag == False and chazarahIndex > 0):
+          chazarahLimud.incrementSection()
+          
+          thisAmud = chazarahLimudList[chazarahIndex-1].amud 
+          lastAmud = chazarahLimudList[chazarahIndex-2].amud 
 
-        if (chazarahIndex % 4 == 0):
-          chazarahLimud.incrementDaf()
+          # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
 
-    # chazarah date will match limud date
-    chazarahLimud.setDate(limud.date)
+          if (thisAmud == lastAmud and chazarahIndex > 1):
+            chazarahLimud.incrementAmud()
 
-    chazarahLimudList.append(copy.copy(chazarahLimud))
-    
-    print(getDailyLimudAndChazarah(limud,chazarahLimud))
+          if (chazarahIndex % 4 == 0):
+            chazarahLimud.incrementDaf()
 
-    resetFlag = False
-    chazarahIndex += 1
+      # chazarah date will match limud date
+      chazarahLimud.setDate(limud.date)
+
+      chazarahLimudList.append(copy.copy(chazarahLimud))
+      
+      # Add to CSV
+      writer.writerow([pos, limud.getDateString(), limud.getDay(), limud.getHebrewDay(), limud.getDafAmud(), chazarahLimud.getDafAmudSection()])
+      
+      print(getDailyLimudAndChazarah(limud,chazarahLimud))
+
+      resetFlag = False
+      chazarahIndex += 1
   
 
 def getDailyLimudAndChazarah(limud, chazarah):
   return limud.getDateAndDayString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
+
+# TODO:
+def writeLineToCSV(writer, limud, chazarah):
+  return null
 
 if __name__ == "__main__":
   """ This is executed when run from the command line """
