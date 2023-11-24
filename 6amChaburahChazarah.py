@@ -49,6 +49,10 @@ def main():
     def getDafAmud(self):
       return str(self.daf) + self.amud
 
+    def getDateWithDay(self):
+      week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sha']
+      self.date.strftime("Date: %m/%d/%Y") + ", \tDay: " + week[self.date.weekday()]
+
     def incrementDaf(self):
       self.daf += 1
 
@@ -115,36 +119,39 @@ def main():
 
   chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartPortion)
   # TODO: fix this so that the first element is correct; however simple fix breaks stuff
-  chazarahLimudList = [chazarahLimud]
+  initialChazarahLimud = copy.copy(chazarahLimud)
+  chazarahLimudList = []
   resetFlag = False
 
   chazarahIndex = 0
   # iterate and add chazarah limud with logic following the weekly/daily limud
-  for limud in dailyLimudList:
-    chazarahLimud.setDate(limud.date)
+  for pos,limud in enumerate(dailyLimudList):
     if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
       print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
-      # TODO: reset the chazarahLimud obj and also the pos to 0 --> will need to use an index
       chazarahLimud.reset()
       resetFlag = True
-    
-    print("LIMUD: " + limud.getDailyLimud() + " \t\t" + "CHAZARAH: " + chazarahLimud.getDailyLimud())
-    
-    if (resetFlag == False):
-      chazarahLimud.incrementPortion()
-      thisAmud = chazarahLimudList[chazarahIndex].amud 
-      lastAmud = chazarahLimudList[chazarahIndex-1].amud 
+      chazarahIndex = 0
+    if (pos == 0):
+      chazarahLimud = initialChazarahLimud
+      chazarahLimud.setDate(date)
+    else:
+      if (resetFlag == False and chazarahIndex > 0):
+        chazarahLimud.incrementPortion()
+        thisAmud = chazarahLimudList[chazarahIndex-1].amud 
+        lastAmud = chazarahLimudList[chazarahIndex-2].amud 
 
-      # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
+        # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
 
-      if ((chazarahIndex > 0) and (thisAmud == lastAmud)):
-        chazarahLimud.incrementAmud()
+        if (thisAmud == lastAmud and chazarahIndex > 1):
+          chazarahLimud.incrementAmud()
 
-      if ((chazarahIndex+1) % 4 == 0):
-        chazarahLimud.incrementDaf()
+        if ((chazarahIndex) % 4 == 0):
+          chazarahLimud.incrementDaf()
     
+    chazarahLimud.setDate(limud.date)
     newChazarahLimud = copy.copy(chazarahLimud)
     chazarahLimudList.append(newChazarahLimud)
+    print("LIMUD: " + limud.getDailyLimud() + " \t\t" + "CHAZARAH: " + chazarahLimud.getDailyLimud())
     resetFlag = False
     chazarahIndex += 1
   
@@ -152,6 +159,9 @@ def main():
   # for limud in chazarahLimudList: print(limud.getDailyLimud())
   
 
+//TODO: 
+def getDailyLimudAndChazarah(limud, chazarah):
+  return null
 
 if __name__ == "__main__":
   """ This is executed when run from the command line """
