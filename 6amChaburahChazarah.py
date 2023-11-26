@@ -34,6 +34,9 @@ def main():
     def getDafAmudSection(self):
       return self.getDafAmud() + " " +  self.section
 
+    def getDafAmudSectionHeb(self, tics):
+      return self.getDafAmudHeb(tics) + " " +  self.section
+
     def incrementSection(self):
       self.section = "Top" if (self.section == "Bottom") else "Bottom"
 
@@ -80,8 +83,11 @@ def main():
   chazarahLimudList = []
 
   chazarahIndex = 0
+
+  EXPORTS_DIR = './exports/'
+  FILE_PREFIX = '6amChabura'
   
-  with open('./exports/6amChazarah_startDate-' + startDate.strftime("%m%d%Y") + '_days-' + str(days) + '.csv','w') as file:
+  with open(EXPORTS_DIR + FILE_PREFIX + '_start=' + startDate.strftime("%m%d%Y") + '_days=' + str(days) + '.csv','w') as file:
     writer = csv.writer(file, dialect='excel')
 
     # Header Row for the CSV
@@ -120,7 +126,7 @@ def main():
       chazarahLimudList.append(copy.copy(chazarahLimud))
       
       # Add to CSV
-      writer.writerow([limud.getDateString(), convertGregToHebrew(limud.date), limud.getDafAmud() if not limud.date.weekday() else "", chazarahLimud.getDafAmudSection()])
+      writer.writerow([limud.getDateString(), convertGregToHebrew(limud.date), limud.getDafAmudHeb(False) if not limud.date.weekday() else "", chazarahLimud.getDafAmudSectionHeb(False)])
       
       print(getDailyLimudAndChazarah(limud,chazarahLimud))
 
