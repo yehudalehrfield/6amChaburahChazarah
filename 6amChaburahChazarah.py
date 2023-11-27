@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Create a chazarah schedule for the 6am Chaburah 
-TODO: Define exact paramaters and logic if chazarah schedule
+TODO: Define exact paramaters and logic for chazarah schedule (notably transitioning from half-amud)
 """
 
 __author__ = "Yehuda"
@@ -11,135 +11,114 @@ __license__ = "MIT"
 import sys
 import datetime
 import copy
-import Limud
+import limud
 import csv
 from pyluach import dates, hebrewcal
+
+EXPORTS_DIR = './exports/'
+FILE_PREFIX = '6amChabura'
+DEFAULT_DAY_COUNT = 60
+CSV_HEADERS = ["Date","Hebrew Date","לימוד","חזרה"]
 
 def main():
   """ Main entry point of the app """
 
-  """ Daily Limud - Amud Weekly"""
-  class DailyLimud(Limud.Limud):
-    def __init__(self, date, daf, amud):
-      super().__init__(date, daf, amud)
-  
-  """ Chazarah Limud - Half Amud Daily (To Start)"""
-  class ChazarahLimud(Limud.Limud):
-    def __init__(self,date,daf,amud,section):
-      self.date = date
-      self.daf = daf
-      self.amud = amud
-      self.section = section
-
-    def getDafAmudSection(self):
-      return self.getDafAmud() + " " +  self.section
-
-    def getDafAmudSectionHeb(self, tics):
-      return self.getDafAmudHeb(tics) + " " +  self.section
-
-    def incrementSection(self):
-      self.section = "Top" if (self.section == "Bottom") else "Bottom"
-
-    def reset(self):
-      self.daf = 2
-      self.amud = "a"
-      self.section = "Top"
-
-  # Initial Limud Values
+  # ╔════════════════════════════════════╗
+  # ║   Initial Limud Values and Set Up  ║
+  # ╚════════════════════════════════════╝ 
   startDate = datetime.datetime(2023,11,27)
   # endDate = datetime.datetime(2024,3,2)
   startDaf = 6
   startAmud = "a"
 
-  # Number of Days to Calculate Chazarah Schedule
+  # Number of Days to Generate Chazarah Schedule
   # If argument is given in the command line, use that value
-  defaultDays = 60
-  days = int(sys.argv[1]) if len(sys.argv) > 1 else defaultDays
+  days = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_DAY_COUNT
 
   # initial limud 
-  limud = DailyLimud(datetime.datetime(2023,11,26),startDaf,startAmud)
+  dailyLimud = limud.Limud(datetime.datetime(2023,11,26),startDaf,startAmud)
   dailyLimudList = []
 
   # iterate and add limud for n days
   index = 0
   for date in (startDate + datetime.timedelta(n) for n in range(days)):
-    limud.setDate(date)
+    dailyLimud.setDate(date)
     if (index % 7 == 0 and index != 0):
-      limud.incrementAmud()
+      dailyLimud.incrementAmud()
     if (index % 14 == 0 and index != 0):
-      limud.incrementDaf()
+      dailyLimud.incrementDaf()
 
     # print(limud.getDailyLimudWithDay())
-    dailyLimudList.append(copy.copy(limud))
+    dailyLimudList.append(copy.copy(dailyLimud))
 
     index += 1
 
-  # Initial Chazarah Values
+  # ╔═══════════════════════════════════════╗
+  # ║   Initial Chazarah Values and Set Up  ║
+  # ╚═══════════════════════════════════════╝ 
   chazarahStartDaf = 2
   chazarahStartAmud = "a"
   chazarahStartSection = "Top"
 
-  chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
-  chazarahLimudList = []
+  chazarahLimud = limud.ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
+  chazarahLimudList = [] # we technically do not need a list here since we are writing to csv...
 
   chazarahIndex = 0
-
-  EXPORTS_DIR = './exports/'
-  FILE_PREFIX = '6amChabura'
   
+  # ╔════════════════════╗
+  # ║   Chazarah Logic   ║
+  # ╚════════════════════╝
   with open(EXPORTS_DIR + FILE_PREFIX + '_start=' + startDate.strftime("%m%d%Y") + '_days=' + str(days) + '.csv','w') as file:
     writer = csv.writer(file, dialect='excel')
 
     # Header Row for the CSV
-    writer.writerow(["Date","Hebrew Date","Limud","Chazarah"])
+    writer.writerow(CSV_HEADERS)
 
     # iterate and add chazarah limud with logic following the weekly/daily limud
-    for pos,limud in enumerate(dailyLimudList):
+    for pos,dailyLimud in enumerate(dailyLimudList):
       # On first iteration, chazarah will be 2aTop
       if (pos == 0):
-        chazarahLimud = ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
+        chazarahLimud = limud.ChazarahLimud(startDate,chazarahStartDaf,chazarahStartAmud,chazarahStartSection)
         chazarahLimud.setDate(date)
       else:
-        # if we are not resetting, increment section and amud/daf if applicable
+        # increment section and amud/daf if applicable
         chazarahLimud.incrementSection()
         
         thisAmud = chazarahLimudList[chazarahIndex-1].amud 
         lastAmud = chazarahLimudList[chazarahIndex-2].amud 
 
-        # print("pos: " + str(pos) + " | This: " + thisAmud + " | Last: " + lastAmud)
-
+        # if amud is complete (top then bottom), increment to the next
         if (thisAmud == lastAmud and chazarahIndex > 1):
           chazarahLimud.incrementAmud()
 
+        # after four iterations (top, bottom, top, bottom), we move on to the next daf 
         if (chazarahIndex % 4 == 0):
           chazarahLimud.incrementDaf()
 
       # reset chazarah if chazarah caught up with limud
-      if (limud.getDafAmud() == chazarahLimud.getDafAmud()):
+      if (dailyLimud.getDafAmud() == chazarahLimud.getDafAmud()):
         print("~~~~ CHAZARAH CAUGHT UP - NEED TO RESET ~~~~")
         chazarahLimud.reset()
         chazarahIndex = 0
 
       # chazarah date will match limud date
-      chazarahLimud.setDate(limud.date)
+      chazarahLimud.setDate(dailyLimud.date)
 
+      # we technically do not need a list here...
       chazarahLimudList.append(copy.copy(chazarahLimud))
       
-      # Add to CSV
-      writer.writerow([limud.getDateString(), convertGregToHebrew(limud.date), limud.getDafAmudHeb(False) if not limud.date.weekday() else "", chazarahLimud.getDafAmudSectionHeb(False)])
+      # Add Row to CSV
+      writeRowToCSV(writer,dailyLimud,chazarahLimud)
       
-      print(getDailyLimudAndChazarah(limud,chazarahLimud))
+      print(getDailyLimudAndChazarah(dailyLimud,chazarahLimud))
 
       chazarahIndex += 1
   
+def getDailyLimudAndChazarah(dailyLimud, chazarah):
+  return dailyLimud.getDateString() + ", \tLimud: " + dailyLimud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
 
-def getDailyLimudAndChazarah(limud, chazarah):
-  # return limud.getDateAndDayString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
-  return limud.getDateString() + ", \tLimud: " + limud.getDafAmud() + ", \tChazarah: " + chazarah.getDafAmudSection()
-
-# TODO:
-def writeLineToCSV(writer, limud, chazarah):
-  return null
+def writeRowToCSV(writer, dailyLimud, chazarahLimud):
+  writer.writerow([dailyLimud.getDateString(), convertGregToHebrew(dailyLimud.date), dailyLimud.getDafAmudHeb(False) if not dailyLimud.date.weekday() else "", chazarahLimud.getDafAmudSectionHeb(False)])
 
 def convertGregToHebrew(date):
   pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)

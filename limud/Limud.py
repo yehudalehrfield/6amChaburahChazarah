@@ -1,5 +1,7 @@
 import calendar
 import util
+
+""" Daily Limud - Amud Weekly"""
 class Limud:
   def __init__(self, date, daf, amud):
       self.date = date
@@ -38,10 +40,6 @@ class Limud:
   def getDateAndDayString(self):
     return self.date.strftime("Date: %m/%d/%Y") + ", \tDay: " + util.weekdays[self.date.weekday()]
     
-
   def getDailyLimud(self):
     return "Date: " + self.date.strftime("%m/%d/%Y") + ", Limud: " + str(self.daf) + self.amud
-
-  def getDailyLimudWithDay(self):
-    return "Date: " + self.date.strftime("%m/%d/%Y") + ", \tDay: " + util.weekdays[self.date.weekday()] + ", \tLimud: " + st
     
