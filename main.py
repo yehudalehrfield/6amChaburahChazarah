@@ -17,7 +17,7 @@ from pyluach import dates, hebrewcal
 
 EXPORTS_DIR = "./exports/"
 FILE_PREFIX = "6amChabura"
-DEFAULT_DAY_COUNT = 180
+DEFAULT_DAY_COUNT = 90
 CSV_HEADERS = ["Date", "Hebrew Date", "לימוד", "חזרה"]
 EXCLUDED_DATES = [
     datetime.date(2023, 12, 31),
