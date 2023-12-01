@@ -115,6 +115,8 @@ def main():
                 writeOffDayRowToCSV(writer, dailyLimud)
                 continue
             else:
+                lastAmudSection = chazarahLimud.amud + chazarahLimud.section
+
                 # increment section and amud/daf if applicable
                 chazarahLimud.incrementSection()
 
@@ -128,19 +130,11 @@ def main():
                     lastAmud = chazarahLimudList[chazarahRunningIndex - 2].amud
 
                 # if amud is complete (top then bottom), increment to the next
+                # TODO: can we do this without chazarahCycleIndex?
                 if thisAmud == lastAmud and chazarahCycleIndex > 1:
                     chazarahLimud.incrementAmud()
 
-                # after four iterations (top, bottom, top, bottom), we move on to the next daf
-                # TODO: instead of using chazaraIndex, maybe use 'last amud was b and last section was Bottom' - will need new variable --> see stash
-                # also, do we need chazarahCycleIndex > 1 here?
-                if (
-                    transitionToFull
-                    and chazarahCycleIndex % 2 == 0
-                    and chazarahCycleIndex > 0
-                ):
-                    chazarahLimud.incrementDaf()
-                elif chazarahCycleIndex % 4 == 0 and chazarahCycleIndex > 1:
+                if lastAmudSection == "bBottom" or lastAmudSection == "bFull":
                     chazarahLimud.incrementDaf()
 
                 chazarahRunningIndex += 1
@@ -157,8 +151,10 @@ def main():
             # check if this is 3x
             transitionToFull = isChazara3x(chazarahLimud, chazarahLimudDict)
 
-            if transitionToFull:
-                chazarahLimud.section = "Full"
+            # if transitionToFull:
+            # chazarahCount = chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
+            # chazarahLimud.section = "Full"
+            # chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
 
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
@@ -182,8 +178,8 @@ def main():
                     transitionToFull,
                 ),
             )
-            if transitionToFull:
-                chazarahLimud.incrementAmud()
+            # if transitionToFull:
+            # chazarahLimud.incrementAmud()
 
             chazarahCycleIndex += 1
 
@@ -228,28 +224,6 @@ def convertGregToHebrew(date):
     pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)
     pyLuachHebDate = pyLuachGregDate.to_heb()
     return pyLuachHebDate.hebrew_date_string(True).replace("ה׳", "")
-
-
-# TODO: this is probably overkill. the chazara does not start if the amud is the same as the weekly.
-# there will never be an instance where half the amud is 3x and the other half is not
-# So this can probably be simplified to just checking if the amud was touched 3x
-# Need to modify the dict: only use the dafAmud (not section) AND only update the dict when the section is "Bottom" (or "Full" for future)
-def isEntireAmudIs3x(chazarahLimud, chazarahLimudDict):
-    if (
-        chazarahLimud.getDafAmudSection() in chazarahLimudDict
-        and chazarahLimudDict.get(chazarahLimud.getDafAmudSection()) >= 3
-    ):
-        if chazarahLimud.section == "Bottom":
-            return True
-        else:  # it's a Top, check if the corresponding Bottom is also three times
-            if (
-                chazarahLimudDict.get(
-                    chazarahLimud.getDafAmudSection().replace("Top", "Bottom")
-                )
-                >= 3
-            ):
-                return True
-    return False
 
 
 def isChazara3x(chazarahLimud, chazarahLimudDict):
