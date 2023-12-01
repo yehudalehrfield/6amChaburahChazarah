@@ -118,7 +118,6 @@ def main():
                 lastAmudSection = chazarahLimud.amud + chazarahLimud.section
                 lastSection = chazarahLimud.section
 
-                # increment section and amud/daf if applicable
                 chazarahLimud.incrementSection()
 
                 # TODO: can this logic be improved?
@@ -158,17 +157,25 @@ def main():
             if transitionToFull:
                 chazarahCount = chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
                 chazarahLimud.section = "Full"
-                chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
+                # If the full amud had already been a chazara, increment that dict entry
+                if chazarahLimud.getDafAmudSection() in chazarahLimudDict:
+                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
+                        chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
+                    )
+                # if this is the first time doing the amud, set the intial value as what was previously the value for the section
+                else:
+                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
 
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
 
             # testing dict functionality
-            chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
-                1
-                if not chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
-                else chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
-            )
+            if not transitionToFull:
+                chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
+                    1
+                    if not chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
+                    else chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
+                )
 
             # Add Row to CSV
             writeRowToCSV(writer, dailyLimud, chazarahLimud)
