@@ -116,10 +116,12 @@ def main():
                 continue
             else:
                 lastAmudSection = chazarahLimud.amud + chazarahLimud.section
+                lastSection = chazarahLimud.section
 
                 # increment section and amud/daf if applicable
                 chazarahLimud.incrementSection()
 
+                # TODO: can this logic be improved?
                 if chazarahRunningIndex == 0:
                     thisAmud = "a"
                     lastamud = null
@@ -131,7 +133,9 @@ def main():
 
                 # if amud is complete (top then bottom), increment to the next
                 # TODO: can we do this without chazarahCycleIndex?
-                if thisAmud == lastAmud and chazarahCycleIndex > 1:
+                if lastSection == "Full":
+                    chazarahLimud.incrementAmud()
+                elif thisAmud == lastAmud and chazarahCycleIndex > 1:
                     chazarahLimud.incrementAmud()
 
                 if lastAmudSection == "bBottom" or lastAmudSection == "bFull":
@@ -151,10 +155,10 @@ def main():
             # check if this is 3x
             transitionToFull = isChazara3x(chazarahLimud, chazarahLimudDict)
 
-            # if transitionToFull:
-            # chazarahCount = chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
-            # chazarahLimud.section = "Full"
-            # chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
+            if transitionToFull:
+                chazarahCount = chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
+                chazarahLimud.section = "Full"
+                chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
 
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
@@ -178,8 +182,6 @@ def main():
                     transitionToFull,
                 ),
             )
-            # if transitionToFull:
-            # chazarahLimud.incrementAmud()
 
             chazarahCycleIndex += 1
 
