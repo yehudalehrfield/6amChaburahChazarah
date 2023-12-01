@@ -19,6 +19,16 @@ EXPORTS_DIR = "./exports/"
 FILE_PREFIX = "6amChabura"
 DEFAULT_DAY_COUNT = 180
 CSV_HEADERS = ["Date", "Hebrew Date", "לימוד", "חזרה"]
+CSV_HEADERS_ALL_DATA = [
+    "Date",
+    "Formatted Date",
+    "Hebrew Date",
+    "Limud - Eng",
+    "Limud - Heb",
+    "Chazarah - Eng",
+    "Chazarah - Heb",
+    "ChazaraCount",
+]
 EXCLUDED_DATES = [
     datetime.date(2023, 12, 31),
     datetime.date(2024, 2, 18),
@@ -27,6 +37,7 @@ EXCLUDED_DATES = [
     datetime.date(2024, 8, 4),
     datetime.date(2024, 9, 22),
 ]
+FULL_DATA_EXPORT = False
 
 
 def main():
@@ -80,13 +91,26 @@ def main():
     chazarahRunningIndex = 0  # only increments on days that are not off days
 
     chazarahScheduleCSV = (
-        EXPORTS_DIR
-        + FILE_PREFIX
-        + "_start="
-        + startDate.strftime("%m%d%Y")
-        + "_days="
-        + str(days)
-        + ".csv"
+        (
+            EXPORTS_DIR
+            + FILE_PREFIX
+            + "_start="
+            + startDate.strftime("%m%d%Y")
+            + "_days="
+            + str(days)
+            + ".csv"
+        )
+        if not FULL_DATA_EXPORT
+        else (
+            EXPORTS_DIR
+            + FILE_PREFIX
+            + "_fullDataExport"
+            + "_start"
+            + startDate.strftime("%m%d%Y")
+            + "_days"
+            + str(days)
+            + ".csv"
+        )
     )
 
     # ╔════════════════════╗
@@ -99,7 +123,7 @@ def main():
         writer = csv.writer(file, dialect="excel")
 
         # Header Row for the CSV
-        writer.writerow(CSV_HEADERS)
+        writer.writerow(CSV_HEADERS if not FULL_DATA_EXPORT else CSV_HEADERS_ALL_DATA)
 
         # iterate and add chazarah limud with logic following the weekly/daily limud
         for pos, dailyLimud in enumerate(dailyLimudList):
@@ -164,7 +188,9 @@ def main():
                     )
                 # if this is the first time doing the amud, set the intial value as what was previously the value for the section
                 else:
-                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
+                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
+                        chazarahCount + 1
+                    )
 
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
@@ -178,7 +204,11 @@ def main():
                 )
 
             # Add Row to CSV
-            writeRowToCSV(writer, dailyLimud, chazarahLimud)
+            writeRowToCSV(
+                writer, dailyLimud, chazarahLimud
+            ) if not FULL_DATA_EXPORT else writeAllRowDataToCSV(
+                writer, dailyLimud, chazarahLimud, chazarahLimudDict
+            )
 
             print(
                 pos,
@@ -218,12 +248,37 @@ def writeRowToCSV(writer, dailyLimud, chazarahLimud):
     )
 
 
+def writeAllRowDataToCSV(writer, dailyLimud, chazarahLimud, chazarahDict):
+    writer.writerow(
+        [
+            dailyLimud.date,
+            dailyLimud.getDateString(),
+            convertGregToHebrew(dailyLimud.date),
+            dailyLimud.getDafAmud() if not dailyLimud.date.weekday() else "",
+            dailyLimud.getDafAmudHeb(False) if not dailyLimud.date.weekday() else "",
+            chazarahLimud.getDafAmudSection(),
+            chazarahLimud.getDafAmudSectionHeb(False),
+            chazarahDict.get(chazarahLimud.getDafAmudSection()),
+        ]
+    )
+
+
 def writeOffDayRowToCSV(writer, dailyLimud):
     writer.writerow(
         [
             dailyLimud.getDateString(),
             convertGregToHebrew(dailyLimud.date),
             dailyLimud.getDafAmudHeb(False) if not dailyLimud.date.weekday() else "",
+            "OFF",
+        ]
+        if not FULL_DATA_EXPORT
+        else [
+            dailyLimud.date,
+            dailyLimud.getDateString(),
+            convertGregToHebrew(dailyLimud.date),
+            dailyLimud.getDafAmud() if not dailyLimud.date.weekday() else "",
+            dailyLimud.getDafAmudHeb(False) if not dailyLimud.date.weekday() else "",
+            "OFF",
             "OFF",
         ]
     )
