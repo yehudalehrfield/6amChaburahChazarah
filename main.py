@@ -72,9 +72,7 @@ def main():
     chazarahLimud = limud.ChazarahLimud(
         startDate, chazarahStartDaf, chazarahStartAmud, chazarahStartSection
     )
-    chazarahLimudList = (
-        []
-    )  # we technically do not need a list here since we are writing to csv...
+    chazarahLimudList = []
 
     chazarahLimudDict = {}
 
@@ -134,7 +132,7 @@ def main():
                     chazarahLimud.incrementAmud()
 
                 # after four iterations (top, bottom, top, bottom), we move on to the next daf
-                # TODO: instead of using chazaraIndex, maybe use 'last amud was b and last section was Bottom' - will need new variable --> see
+                # TODO: instead of using chazaraIndex, maybe use 'last amud was b and last section was Bottom' - will need new variable --> see stash
                 # also, do we need chazarahCycleIndex > 1 here?
                 if chazarahCycleIndex % 4 == 0 and chazarahCycleIndex > 1:
                     chazarahLimud.incrementDaf()
@@ -211,7 +209,7 @@ def writeOffDayRowToCSV(writer, dailyLimud):
 def convertGregToHebrew(date):
     pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)
     pyLuachHebDate = pyLuachGregDate.to_heb()
-    return pyLuachHebDate.hebrew_date_string(True)
+    return pyLuachHebDate.hebrew_date_string(True).replace("ה׳", "")
 
 
 if __name__ == "__main__":
