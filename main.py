@@ -17,7 +17,7 @@ from pyluach import dates, hebrewcal
 
 EXPORTS_DIR = "./exports/"
 FILE_PREFIX = "6amChabura"
-DEFAULT_DAY_COUNT = 90
+DEFAULT_DAY_COUNT = 180
 CSV_HEADERS = ["Date", "Hebrew Date", "לימוד", "חזרה"]
 EXCLUDED_DATES = [
     datetime.date(2023, 12, 31),
@@ -134,7 +134,13 @@ def main():
                 # after four iterations (top, bottom, top, bottom), we move on to the next daf
                 # TODO: instead of using chazaraIndex, maybe use 'last amud was b and last section was Bottom' - will need new variable --> see stash
                 # also, do we need chazarahCycleIndex > 1 here?
-                if chazarahCycleIndex % 4 == 0 and chazarahCycleIndex > 1:
+                if (
+                    transitionToFull
+                    and chazarahCycleIndex % 2 == 0
+                    and chazarahCycleIndex > 0
+                ):
+                    chazarahLimud.incrementDaf()
+                elif chazarahCycleIndex % 4 == 0 and chazarahCycleIndex > 1:
                     chazarahLimud.incrementDaf()
 
                 chazarahRunningIndex += 1
@@ -147,6 +153,12 @@ def main():
 
             # chazarah date will match limud date
             chazarahLimud.setDate(dailyLimud.date)
+
+            # check if this is 3x
+            transitionToFull = isChazara3x(chazarahLimud, chazarahLimudDict)
+
+            if transitionToFull:
+                chazarahLimud.section = "Full"
 
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
@@ -162,25 +174,31 @@ def main():
             writeRowToCSV(writer, dailyLimud, chazarahLimud)
 
             print(
+                pos,
                 getDailyLimudAndChazarah(
                     dailyLimud,
                     chazarahLimud,
                     chazarahLimudDict.get(chazarahLimud.getDafAmudSection()),
-                )
+                    transitionToFull,
+                ),
             )
+            if transitionToFull:
+                chazarahLimud.incrementAmud()
 
             chazarahCycleIndex += 1
 
 
-def getDailyLimudAndChazarah(dailyLimud, chazarah, chazarahCount):
+def getDailyLimudAndChazarah(dailyLimud, chazarah, chazarahCount, isFullAmud3x):
     return (
         dailyLimud.getDateString()
         + "\tLimud: "
         + dailyLimud.getDafAmud()
         + "\tChazarah: "
         + chazarah.getDafAmudSection()
-        + "\t Chazarah Cycle: "
+        + "\t Chazarah Count: "
         + str(chazarahCount)
+        + "\t Amud Transition: "
+        + str(isFullAmud3x)
     )
 
 
@@ -210,6 +228,34 @@ def convertGregToHebrew(date):
     pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)
     pyLuachHebDate = pyLuachGregDate.to_heb()
     return pyLuachHebDate.hebrew_date_string(True).replace("ה׳", "")
+
+
+# TODO: this is probably overkill. the chazara does not start if the amud is the same as the weekly.
+# there will never be an instance where half the amud is 3x and the other half is not
+# So this can probably be simplified to just checking if the amud was touched 3x
+# Need to modify the dict: only use the dafAmud (not section) AND only update the dict when the section is "Bottom" (or "Full" for future)
+def isEntireAmudIs3x(chazarahLimud, chazarahLimudDict):
+    if (
+        chazarahLimud.getDafAmudSection() in chazarahLimudDict
+        and chazarahLimudDict.get(chazarahLimud.getDafAmudSection()) >= 3
+    ):
+        if chazarahLimud.section == "Bottom":
+            return True
+        else:  # it's a Top, check if the corresponding Bottom is also three times
+            if (
+                chazarahLimudDict.get(
+                    chazarahLimud.getDafAmudSection().replace("Top", "Bottom")
+                )
+                >= 3
+            ):
+                return True
+    return False
+
+
+def isChazara3x(chazarahLimud, chazarahLimudDict):
+    if chazarahLimud.getDafAmudSection() not in chazarahLimudDict:
+        return False
+    return chazarahLimudDict.get(chazarahLimud.getDafAmudSection()) >= 3
 
 
 if __name__ == "__main__":

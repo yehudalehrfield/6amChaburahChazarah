@@ -17,7 +17,7 @@ class ChazarahLimud(limud.Limud):
         return self.getDafAmudHeb(tics) + " " + self.section
 
     def incrementSection(self):
-        self.section = "Top" if (self.section == "Bottom") else "Bottom"
+        self.section = "Bottom" if (self.section == "Top") else "Top"
 
     def reset(self):
         self.daf = 2
