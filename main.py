@@ -17,7 +17,7 @@ from pyluach import dates, hebrewcal
 
 EXPORTS_DIR = "./exports/"
 FILE_PREFIX = "6amChabura"
-DEFAULT_DAY_COUNT = 90
+DEFAULT_DAY_COUNT = 180
 CSV_HEADERS = ["Date", "Hebrew Date", "לימוד", "חזרה"]
 EXCLUDED_DATES = [
     datetime.date(2023, 12, 31),
@@ -72,9 +72,7 @@ def main():
     chazarahLimud = limud.ChazarahLimud(
         startDate, chazarahStartDaf, chazarahStartAmud, chazarahStartSection
     )
-    chazarahLimudList = (
-        []
-    )  # we technically do not need a list here since we are writing to csv...
+    chazarahLimudList = []
 
     chazarahLimudDict = {}
 
@@ -117,9 +115,12 @@ def main():
                 writeOffDayRowToCSV(writer, dailyLimud)
                 continue
             else:
-                # increment section and amud/daf if applicable
+                lastAmudSection = chazarahLimud.amud + chazarahLimud.section
+                lastSection = chazarahLimud.section
+
                 chazarahLimud.incrementSection()
 
+                # TODO: can this logic be improved?
                 if chazarahRunningIndex == 0:
                     thisAmud = "a"
                     lastamud = null
@@ -130,13 +131,13 @@ def main():
                     lastAmud = chazarahLimudList[chazarahRunningIndex - 2].amud
 
                 # if amud is complete (top then bottom), increment to the next
-                if thisAmud == lastAmud and chazarahCycleIndex > 1:
+                # TODO: can we do this without chazarahCycleIndex?
+                if lastSection == "Full":
+                    chazarahLimud.incrementAmud()
+                elif thisAmud == lastAmud and chazarahCycleIndex > 1:
                     chazarahLimud.incrementAmud()
 
-                # after four iterations (top, bottom, top, bottom), we move on to the next daf
-                # TODO: instead of using chazaraIndex, maybe use 'last amud was b and last section was Bottom' - will need new variable --> see
-                # also, do we need chazarahCycleIndex > 1 here?
-                if chazarahCycleIndex % 4 == 0 and chazarahCycleIndex > 1:
+                if lastAmudSection == "bBottom" or lastAmudSection == "bFull":
                     chazarahLimud.incrementDaf()
 
                 chazarahRunningIndex += 1
@@ -150,39 +151,59 @@ def main():
             # chazarah date will match limud date
             chazarahLimud.setDate(dailyLimud.date)
 
+            # check if this is 3x
+            transitionToFull = isChazara3x(chazarahLimud, chazarahLimudDict)
+
+            if transitionToFull:
+                chazarahCount = chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
+                chazarahLimud.section = "Full"
+                # If the full amud had already been a chazara, increment that dict entry
+                if chazarahLimud.getDafAmudSection() in chazarahLimudDict:
+                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
+                        chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
+                    )
+                # if this is the first time doing the amud, set the intial value as what was previously the value for the section
+                else:
+                    chazarahLimudDict[chazarahLimud.getDafAmudSection()] = chazarahCount
+
             # we technically do not need a list here...
             chazarahLimudList.append(copy.copy(chazarahLimud))
 
             # testing dict functionality
-            chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
-                1
-                if not chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
-                else chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
-            )
+            if not transitionToFull:
+                chazarahLimudDict[chazarahLimud.getDafAmudSection()] = (
+                    1
+                    if not chazarahLimudDict.get(chazarahLimud.getDafAmudSection())
+                    else chazarahLimudDict[chazarahLimud.getDafAmudSection()] + 1
+                )
 
             # Add Row to CSV
             writeRowToCSV(writer, dailyLimud, chazarahLimud)
 
             print(
+                pos,
                 getDailyLimudAndChazarah(
                     dailyLimud,
                     chazarahLimud,
                     chazarahLimudDict.get(chazarahLimud.getDafAmudSection()),
-                )
+                    transitionToFull,
+                ),
             )
 
             chazarahCycleIndex += 1
 
 
-def getDailyLimudAndChazarah(dailyLimud, chazarah, chazarahCount):
+def getDailyLimudAndChazarah(dailyLimud, chazarah, chazarahCount, isFullAmud3x):
     return (
         dailyLimud.getDateString()
         + "\tLimud: "
         + dailyLimud.getDafAmud()
         + "\tChazarah: "
         + chazarah.getDafAmudSection()
-        + "\t Chazarah Cycle: "
+        + "\t Chazarah Count: "
         + str(chazarahCount)
+        + "\t Amud Transition: "
+        + str(isFullAmud3x)
     )
 
 
@@ -211,7 +232,13 @@ def writeOffDayRowToCSV(writer, dailyLimud):
 def convertGregToHebrew(date):
     pyLuachGregDate = dates.GregorianDate(date.year, date.month, date.day)
     pyLuachHebDate = pyLuachGregDate.to_heb()
-    return pyLuachHebDate.hebrew_date_string(True)
+    return pyLuachHebDate.hebrew_date_string(True).replace("ה׳", "")
+
+
+def isChazara3x(chazarahLimud, chazarahLimudDict):
+    if chazarahLimud.getDafAmudSection() not in chazarahLimudDict:
+        return False
+    return chazarahLimudDict.get(chazarahLimud.getDafAmudSection()) >= 3
 
 
 if __name__ == "__main__":
